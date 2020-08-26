@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# nvm
+export NVM_DIR="$HOME/.nvm"
