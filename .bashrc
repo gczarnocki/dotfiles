@@ -8,24 +8,73 @@ case $- in
       *) return;;
 esac
 
-# don't put duplicate lines or lines starting with space in the history.
-# See bash(1) for more options
-HISTCONTROL=ignoreboth
+###########################################
+############## Sensible Bash ##############
+# https://github.com/mrzool/bash-sensible #
+###########################################
 
-# append to the history file, don't overwrite it
-shopt -s histappend
+### GENERAL OPTIONS ###
 
-# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
-HISTSIZE=1000
-HISTFILESIZE=2000
+# Prevent file overwrite on stdout redirection
+# Use `>|` to force redirection to existing file
+set -o noclobber
 
-# check the window size after each command and, if necessary,
-# update the values of LINES and COLUMNS.
+# Check the window size after each command
 shopt -s checkwinsize
 
-# If set, the pattern "**" used in a pathname expansion context will
-# match all files and zero or more directories and subdirectories.
-#shopt -s globstar
+# Automatically trim long paths in the prompt
+PROMPT_DIRTRIM=2
+
+# Enable history expansion with space
+bind Space:magic-space
+
+# The pattern "**" used in a pathname expansion context will match all
+# files and zero or more directories and subdirectories (recursive).
+shopt -s globstar 2> /dev/null
+
+# Case-insensitive globbing (used in pathname expansion)
+shopt -s nocaseglob
+
+### DIRECTORY NAVIGATION ###
+
+# Prepend 'cd' to directory names automatically
+shopt -s autocd 2> /dev/null
+
+# 'cd' to directory if path is in variable
+shopt -s cdable_vars 2> /dev/null
+# Correct spelling errors during tab-completion
+shopt -s dirspell 2> /dev/null
+# Correct spelling errors in arguments supplied to 'cd'
+shopt -s cdspell 2> /dev/null
+
+### HISTORY OPTIONS ###
+
+# Specify history file path
+HISTFILE=~/.bash_history
+
+# Append to the history file, don't overwrite it
+shopt -s histappend
+
+# Save multi-line commands as one command
+shopt -s cmdhist
+
+# https://www.linuxjournal.com/content/using-bash-history-more-efficiently-histcontrol
+# Don't put duplicate lines or lines starting with space in the history
+HISTCONTROL=ignoreboth
+
+# Large history
+HISTSIZE=32768 # 32^4
+HISTFILESIZE=131072 # 4 * ${HISTSIZE}
+
+# Don't record repetivite commands
+# [ \t]* - also achieved by 'HISTCONTROL=ignorespace'
+HISTIGNORE="&:[ \t]*:exit:ls:[bf]g:history:clear:pwd"
+
+# Standard ISO 8601 timestamp in history
+# '%Y-%m-%d %H:%M:%S', e.g. '2020-09-02 18:23:15'
+HISTTIMEFORMAT='%F %T '
+
+### OTHER OPTIONS ###
 
 # make less more friendly for non-text input files, see lesspipe(1)
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
@@ -47,12 +96,12 @@ esac
 
 if [ -n "$force_color_prompt" ]; then
     if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
-        # We have color support; assume it's compliant with Ecma-48
-        # (ISO/IEC-6429). (Lack of such support is extremely rare, and such
-        # a case would tend to support setf rather than setaf.)
-        color_prompt=yes
+	# We have color support; assume it's compliant with Ecma-48
+	# (ISO/IEC-6429). (Lack of such support is extremely rare, and such
+	# a case would tend to support setf rather than setaf.)
+	color_prompt=yes
     else
-        color_prompt=
+	color_prompt=
     fi
 fi
 
@@ -96,6 +145,15 @@ alias l='ls -CF'
 #   sleep 10; alert
 alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
 
+# Alias definitions.
+# You may want to put all your additions into a separate file like
+# ~/.bash_aliases, instead of adding them here directly.
+# See /usr/share/doc/bash-doc/examples in the bash-doc package.
+
+if [ -f ~/.bash_aliases ]; then
+    . ~/.bash_aliases
+fi
+
 # enable programmable completion features (you don't need to enable
 # this, if it's already enabled in /etc/bash.bashrc and /etc/profile
 # sources /etc/bash.bashrc).
@@ -106,14 +164,3 @@ if ! shopt -oq posix; then
     . /etc/bash_completion
   fi
 fi
-
-##### End of generic .bashrc #####
-
-##### Custom changes #####
-
-for file in ~/.{path,exports,aliases,functions,extras,docker}; do
-	if [[ -r "$file" ]] && [[ -f "$file" ]]; then
-		source "$file"
-	fi
-done
-unset file

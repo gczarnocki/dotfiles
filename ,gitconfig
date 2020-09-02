@@ -1,0 +1,8 @@
+[user]
+    name = Grzegorz Czarnocki
+    email = g.czarnocki1@gmail.com
+[github]
+    user = gczarnocki
+[core]
+    editor = vim
+    excludesfile = ~/.gitignore

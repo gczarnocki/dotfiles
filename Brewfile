@@ -1,3 +1,4 @@
+brew "gcc"
 brew "tmux"
 brew "stow"
 brew "tree"

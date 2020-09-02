@@ -1,6 +1,11 @@
 #!/bin/bash
 
-echo "Downloading `Antigen`..."
+echo "Update package cache..."
+dnf check-update
 
-mkdir -p ~/.zsh
-curl -L git.io/antigen > ~/.zsh/antigen.zsh
+echo "Upgrade packages..."
+sudo dnf upgrade
+
+echo "Install Brew..."
+# https://brew.sh
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
