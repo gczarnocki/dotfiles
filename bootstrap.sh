@@ -6,26 +6,29 @@ set -e
 
 GITHUB_REPO_URL="https://github.com/gczarnocki/dotfiles"
 
+DOCKER_COMPOSE_URL="https://github.com/docker/compose/releases/download/1.26.2/docker-compose-$(uname -s)-$(uname -m)"
+DOCKER_COMPOSE_BASHCOMPLETION_URL="https://raw.githubusercontent.com/docker/compose/1.26.2/contrib/completion/bash/docker-compose"
 ZPLUG_INSTALLER_URL="https://raw.githubusercontent.com/zplug/installer/master/installer.zsh"
-# HOMEBREW_INSTALL_URL="https://raw.githubusercontent.com/Homebrew/install/master/install.sh"
+HOMEBREW_INSTALL_URL="https://raw.githubusercontent.com/Homebrew/install/master/install.sh"
 
 export DOTFILES=${1:-"${HOME}/.dotfiles"}
 
-# install_homebrew() {
-#     echo "Trying to detect installed Homebrew..."
+install_homebrew() {
+    echo "Trying to detect installed Homebrew..."
 
-#     if _exists brew; then
-#         info "Brew is installed."
-#     else
-#         info "Installing Homebrew..."
-#         /bin/bash -c "$(curl -fsSL ${HOMEBREW_INSTALL_URL})"
+    if _exists brew; then
+        info "Brew is installed."
+    else
+        info "Installing Homebrew..."
+        /bin/bash -c "$(curl -fsSL ${HOMEBREW_INSTALL_URL})"
 
-#         brew update
-#         brew upgrade
-#     fi
+        eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
+        brew update
+        brew upgrade
+    fi
 
-#     finish
-# }
+    finish
+}
 
 install_zsh() {
     local name="ZSH"
@@ -151,10 +154,110 @@ install_powerline_fonts() {
     else
         _print_package_already_installed "${package_name}"
     fi
+
+    finish
 }
 
+delete_previous_docker_installations() {
+    local proc_version=$(cat /proc/version)
+
+    info "Removing previous Docker installations..."
+
+    # Debian (Ubuntu, Mint)
+    if [[ "${proc_version}" =~ *"Debian"* ]]; then
+        sudo apt-get remove docker docker-engine docker.io containerd runc
+    # RHEL, Fedora, CentOS
+    elif [[ "${proc_version}" =~ *"Red Hat"* ]]; then
+        sudo dnf remove -y docker-* containerd runc
+        sudo dnf config-manager --disable docker-*
+    fi
+    
+    finish
+}
+
+install_docker_repository() {
+    local proc_version=$(cat /proc/version)
+
+    info "Installing Docker package repository..."
+
+    # Debian (Ubuntu, Mint)
+    if [[ "${proc_version}" =~ *"Debian"* ]]; then
+        sudo apt-get update
+        sudo apt-get install apt-transport-https ca-certificates curl gnupg-agent software-properties-common
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+        sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+        sudo apt-get update
+    # RHEL, Fedora, CentOS
+    elif [[ "${proc_version}" =~ *"Red Hat"* ]]; then
+        warn "'docker-ce' repository for Fedora 32 is not present, use 'moby-engine' instead!"
+        # sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+    fi
+
+    finish
+}
+
+install_docker_package() {
+    ocal proc_version=$(cat /proc/version)
+
+    info "Installing Docker package repository..."
+
+    # Debian (Ubuntu, Mint)
+    if [[ "${proc_version}" =~ *"Debian"* ]]; then
+        install_package docker-ce docker-ce-cli containerd.io
+    # RHEL, Fedora, CentOS
+    elif [[ "${proc_version}" =~ *"Red Hat"* ]]; then
+        install_package moby-engine
+    fi
+
+    finish       
+}
+
+install_docker() {
+    # https://fedoramagazine.org/docker-and-fedora-32/
+    # Fedora 32 doesn't support Docker OOTB at the moment
+    local name="Docker"
+    local proc_version=$(cat /proc/version)
+
+    _print_package_detect_if_installed "${name}"
+
+    if ! _exists docker; then
+        delete_previous_docker_installations
+        install_docker_repository
+        install_docker_package
+        
+        sudo systemctl enable docker
+        sudo systemctl start docker
+
+        sudo docker run hello-world
+
+        sudo groupadd docker
+        sudo usermod -aG docker $USER
+    else
+        _print_package_already_installed ${name}
+    fi
+
+    finish
+}
+
+install_docker_compose() {
+    local name="Docker Compose"
+    local package_name="docker-compose"
+
+    if ! _exists 'docker-compose'; then
+        sudo curl -L "${DOCKER_COMPOSE_URL}" -o /usr/local/bin/docker-compose
+        sudo curl -L "${DOCKER_COMPOSE_BASHCOMPLETION_URL}" -o /etc/bash_completion.d/docker-compose
+    else
+        _print_package_already_installed "${name}"
+    fi
+
+    finish
+}
+
+install_homebrew
 install_git
 install_vscode
 install_zsh
 install_zplug
 install_powerline_fonts
+install_docker
+install_docker_compose

@@ -96,15 +96,15 @@ upgrade_packages() {
 }
 
 install_package() {
-    package_name=${1:?"Package name must be specified!"}
+    package_name=${1:?"Package name(s) must be specified!"}
 
     if _exists brew; then
-        brew install ${package_name}
+        brew install $@
     elif _exists apt; then
-        sudo apt install -y ${package_name}
+        sudo apt install -y $@
     elif _exists dnf; then
-        sudo dnf install -y ${package_name}
+        sudo dnf install -y $@
     elif _exists yum; then
-        sudo yum install -y ${package_name}
+        sudo yum install -y $@
     fi
 }
