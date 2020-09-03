@@ -5,53 +5,156 @@ source scripts/common.sh
 set -e
 
 GITHUB_REPO_URL="https://github.com/gczarnocki/dotfiles"
-HOMEBREW_INSTALL_URL="https://raw.githubusercontent.com/Homebrew/install/master/install.sh"
+
+ZPLUG_INSTALLER_URL="https://raw.githubusercontent.com/zplug/installer/master/installer.zsh"
+# HOMEBREW_INSTALL_URL="https://raw.githubusercontent.com/Homebrew/install/master/install.sh"
 
 export DOTFILES=${1:-"${HOME}/.dotfiles"}
 
-install_homebrew() {
-    echo "Trying to detect installed Homebrew..."
+# install_homebrew() {
+#     echo "Trying to detect installed Homebrew..."
 
-    if _exists brew; then
-        info "Brew is installed."
-    else
-        info "Installing Homebrew..."
-        /bin/bash -c "$(curl -fsSL ${HOMEBREW_INSTALL_URL})"
+#     if _exists brew; then
+#         info "Brew is installed."
+#     else
+#         info "Installing Homebrew..."
+#         /bin/bash -c "$(curl -fsSL ${HOMEBREW_INSTALL_URL})"
 
-        brew update
-        brew upgrade
-    fi
+#         brew update
+#         brew upgrade
+#     fi
 
-    finish
-}
-
-install_package() {
-    package_name=${1:?"Package name must be specified!"}
-
-    if _exists brew; then
-        brew install ${package_name}
-    else fi _exists apt; then
-        apt install -y ${package_name}
-    else if _exists dnf; then
-        dnf install -y ${package_name}
-}
+#     finish
+# }
 
 install_zsh() {
-    echo "Trying to detect installed ZSH..."
+    local name="ZSH"
+    local package_name="zsh"
 
-    if _exists zsh; then
-        info "ZSH is installed."
+    _print_package_detect_if_installed $name
+
+    if ! _exists zsh; then
+        _print_package_not_installed $name
+        read -p "Do you want to install $name? [y/N]" -n 1 answer
+        echo
+
+        if [ "${answer}" != "y" ]; then
+            exit 1
+        fi
+
+        _print_package_installing $name
+        install_package $package_name
     else
-        info "Installing ZSH..."
-        install_package zsh
-
-        brew update
-        brew upgrade
+        _print_package_already_installed $package_name
     fi
 
     finish
 }
 
-install_homebrew
+import_vscode_repository() {
+    local proc_version=$(cat /proc/version)
+
+    info "Installing Visual Studio Code package repository..."
+
+    # Debian (Ubuntu, Mint)
+    if [[ "${proc_version}" =~ *"Debian"* ]]; then
+        wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+        sudo install -o root -g root -m 644 packages.microsoft.gpg /etc/apt/trusted.gpg.d/
+        sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/packages.microsoft.gpg] https://packages.microsoft.com/repos/vscode stable main" > /etc/apt/sources.list.d/vscode.list'
+    # RHEL, Fedora, CentOS
+    elif [[ "${proc_version}" =~ *"Red Hat"* ]]; then
+        sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+        sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
+    fi
+
+    finish
+}
+
+install_vscode() {
+    local name="Visual Studio Code"
+    local package_name="code"
+
+    _print_package_detect_if_installed "${name}"
+
+    if ! _exists ${package_name}; then
+        _print_package_installing "${name}"
+        import_vscode_repository
+        update_package_cache    
+        install_package code
+    else
+        _print_package_already_installed "${name}"
+    fi
+
+    finish
+}
+
+install_git() {
+    local name="Git"
+    local package_name="git"
+
+    _print_package_detect_if_installed $name
+
+    if ! _exists git; then
+        _print_package_not_installed $name
+
+        read -p "Do you want to install $name? [y/N] " -n 1 answer
+        echo
+
+        if [ "${answer}" != "y" ]; then
+            exit 1
+        fi
+
+        _print_package_installing $name
+        install_package git
+    else
+        _print_package_already_installed $name
+    fi
+
+    finish
+}
+
+install_zplug() {
+    local name="zplug"
+
+    _print_package_detect_if_installed $name
+
+    # Check if directory exists
+    if ! _test d "${HOME}/.zplug"; then
+        # https://github.com/zplug/zplug
+        curl -sL --proto-redir -all,https ${ZPLUG_INSTALLER_URL} | zsh
+    else
+        _print_package_already_installed $name
+    fi
+
+    finish
+}
+
+install_powerline_fonts() {
+    local fonts_dir="${HOME}/.local/share/fonts"
+    local package_name="Powerline Fonts"
+
+    _print_package_detect_if_installed "${package_name}"
+
+    if ! [ "$(ls -1 ${fonts_dir} | grep -i "Powerline" | wc -l)" -gt "0" ]; then
+        _print_package_installing "${package_name}"
+
+        # https://github.com/powerline/fonts#quick-installation
+        pushd ~
+        git clone https://github.com/powerline/fonts.git --depth=1
+        pushd fonts
+        ./install.sh
+        popd
+        rm -rf fonts
+        popd
+
+        finish
+    else
+        _print_package_already_installed "${package_name}"
+    fi
+}
+
+install_git
+install_vscode
 install_zsh
 install_zplug
+install_powerline_fonts
