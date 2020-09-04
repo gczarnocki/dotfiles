@@ -13,8 +13,29 @@ HOMEBREW_INSTALL_URL="https://raw.githubusercontent.com/Homebrew/install/master/
 
 export DOTFILES=${1:-"${HOME}/.dotfiles"}
 
+on_start() {
+    info "         __      __  _____ __         "
+    info "    ____/ /___  / /_/ __(_) /__  _____"
+    info "   / __  / __ \/ __/ /_/ / / _ \/ ___/"
+    info " _/ /_/ / /_/ / /_/ __/ / /  __(__  ) "
+    info "(_)__,_/\____/\__/_/ /_/_/\___/____/  "
+    info "                                      "
+    info "             @gczarnocki				"
+    echo
+}
+
+on_finish() {
+    info "         __                 __"
+    info "    ____/ /___  ____  ___  / /"
+    info "   / __  / __ \/ __ \/ _ \/ / "
+    info " _/ /_/ / /_/ / / / /  __/_/  "
+    info "(_)__,_/\____/_/ /_/\___(_)   "
+    info "                              "
+    echo
+}
+
 install_homebrew() {
-    echo "Trying to detect installed Homebrew..."
+    _print_package_detect_if_installed "Homebrew"
 
     HOMEBREW_EXECUTABLE_PATH=/home/linuxbrew/.linuxbrew/bin/brew
 
@@ -63,12 +84,12 @@ import_vscode_repository() {
     info "Installing Visual Studio Code package repository..."
 
     # Debian (Ubuntu, Mint)
-    if [[ "${proc_version}" =~ *"Debian"* ]]; then
-        wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+    if [[ "${proc_version}" == *"Debian"* || "${proc_version}" == *"Ubuntu"* ]]; then
+	wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
         sudo install -o root -g root -m 644 packages.microsoft.gpg /etc/apt/trusted.gpg.d/
         sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/packages.microsoft.gpg] https://packages.microsoft.com/repos/vscode stable main" > /etc/apt/sources.list.d/vscode.list'
     # RHEL, Fedora, CentOS
-    elif [[ "${proc_version}" =~ *"Red Hat"* ]]; then
+    elif [[ "${proc_version}" == *"Red Hat"* ]]; then
         sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
         sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
     fi
@@ -83,10 +104,10 @@ install_vscode() {
     _print_package_detect_if_installed "${name}"
 
     if ! _exists ${package_name}; then
-        _print_package_installing "${name}"
         import_vscode_repository
         update_package_cache
-        install_package code
+        install_package apt-transport-https
+	install_package code
     else
         _print_package_already_installed "${name}"
     fi
@@ -184,13 +205,14 @@ install_docker_repository() {
     info "Installing Docker package repository..."
 
     # Debian (Ubuntu, Mint)
-    if [[ "${proc_version}" =~ *"Debian"* ]]; then
+    if _exists apt-get; then
         sudo apt-get update
         sudo apt-get install apt-transport-https ca-certificates curl gnupg-agent software-properties-common
         curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
         sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
         sudo apt-get update
     # RHEL, Fedora, CentOS
+    # TODO: Fix this installation for Fedora 32
     elif [[ "${proc_version}" =~ *"Red Hat"* ]]; then
         warn "'docker-ce' repository for Fedora 32 is not present, use 'moby-engine' instead!"
         # sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
@@ -200,15 +222,15 @@ install_docker_repository() {
 }
 
 install_docker_package() {
-    ocal proc_version=$(cat /proc/version)
+    local proc_version=$(cat /proc/version)
 
     info "Installing Docker package repository..."
 
     # Debian (Ubuntu, Mint)
-    if [[ "${proc_version}" =~ *"Debian"* ]]; then
+    if [[ "${proc_version}" == *"Debian"* || "${proc_version}" == *"Ubuntu"* ]]; then
         install_package docker-ce docker-ce-cli containerd.io
     # RHEL, Fedora, CentOS
-    elif [[ "${proc_version}" =~ *"Red Hat"* ]]; then
+    elif [[ "${proc_version}" == *"Red Hat"* ]]; then
         install_package moby-engine
     fi
 
@@ -246,11 +268,19 @@ install_docker_compose() {
     local name="Docker Compose"
     local package_name="docker-compose"
 
+    _print_package_detect_if_installed "${package_name}"
+
     if ! _exists 'docker-compose'; then
         sudo curl -L "${DOCKER_COMPOSE_URL}" -o /usr/local/bin/docker-compose
+    else
+        _print_package_already_installed "${package_name}"
+    fi
+
+    if ! _test f /etc/bash_completion.d/docker-compose; then
+        _print_package_installing "docker-compose Bash completion"
         sudo curl -L "${DOCKER_COMPOSE_BASHCOMPLETION_URL}" -o /etc/bash_completion.d/docker-compose
     else
-        _print_package_already_installed "${name}"
+        _print_package_already_installed "docker-compose Bash completion"
     fi
 
     finish
@@ -273,22 +303,15 @@ install_base_packages() {
         fi
     done
 
-    # if ! _exists 'docker-compose'; then
-    #     sudo curl -L "${DOCKER_COMPOSE_URL}" -o /usr/local/bin/docker-compose
-    #     sudo curl -L "${DOCKER_COMPOSE_BASHCOMPLETION_URL}" -o /etc/bash_completion.d/docker-compose
-    # else
-    #     _print_package_already_installed "${name}"
-    # fi
-
     finish
 }
 
-# install_git
-# install_homebrew
-# install_vscode
-# install_zsh
-# install_zplug
-# install_powerline_fonts
-# install_docker
-# install_docker_compose
+install_git
+install_homebrew
+install_vscode
+install_zsh
+install_zplug
+install_powerline_fonts
+install_docker
+install_docker_compose
 install_base_packages

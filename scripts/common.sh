@@ -67,14 +67,12 @@ _print_package_detect_if_installed() {
 update_package_cache() {
     local proc_version=$(cat /proc/version)
 
-    if [[ "${proc_version}" == *"Debian"* ]]; then
-        apt-get update
-    elif [[ "${proc_version}" == *"Red Hat"* ]]; then
-        if _exists dnf; then
-            dnf check-update
-        elif _exists yum; then
-            yum check-update
-        fi
+    if _exists apt-get; then
+	sudo apt-get update
+    elif _exists dnf; then
+        sudo dnf check-update
+    elif _exists yum; then
+        sudo yum check-update
     fi
 }
 
@@ -82,14 +80,12 @@ update_package_cache() {
 upgrade_packages() {
     local proc_version=$(cat /proc/version)
 
-    if [[ "${proc_version}" == *"Debian"* ]]; then
-         sudo apt-get upgrade -y
-    elif [[ "${proc_version}" == *"Red Hat"* ]]; then
-        if _exists dnf; then
-            sudo dnf upgrade -y
-        elif _exists yum; then
-            sudo yum upgrade -y
-        fi
+    if _exists apt-get; then
+        sudo apt-get upgrade -y
+    elif _exists dnf; then
+        sudo dnf upgrade -y
+    elif _exists yum; then
+        sudo yum upgrade -y
     fi
 }
 
