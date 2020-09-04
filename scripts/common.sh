@@ -96,9 +96,7 @@ upgrade_packages() {
 install_package() {
     package_name=${1:?"Package name(s) must be specified!"}
 
-    if _exists brew; then
-        brew install $@
-    elif _exists apt; then
+    if _exists apt; then
         sudo apt install -y $@
     elif _exists dnf; then
         sudo dnf install -y $@

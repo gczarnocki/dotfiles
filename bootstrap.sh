@@ -256,11 +256,39 @@ install_docker_compose() {
     finish
 }
 
-install_git
-install_homebrew
-install_vscode
-install_zsh
-install_zplug
-install_powerline_fonts
-install_docker
-install_docker_compose
+install_base_packages() {
+    for pkg in $(cat packages.list); do
+        if ! _exists $pkg; then
+            read -p "Do you want to install $pkg? [y/N] " -n 1 answer
+            echo
+
+            if [ "${answer}" != "y" ]; then
+                continue
+            fi
+
+            _print_package_installing $pkg
+            install_package $pkg
+        else
+            _print_package_already_installed $pkg
+        fi
+    done
+
+    # if ! _exists 'docker-compose'; then
+    #     sudo curl -L "${DOCKER_COMPOSE_URL}" -o /usr/local/bin/docker-compose
+    #     sudo curl -L "${DOCKER_COMPOSE_BASHCOMPLETION_URL}" -o /etc/bash_completion.d/docker-compose
+    # else
+    #     _print_package_already_installed "${name}"
+    # fi
+
+    finish
+}
+
+# install_git
+# install_homebrew
+# install_vscode
+# install_zsh
+# install_zplug
+# install_powerline_fonts
+# install_docker
+# install_docker_compose
+install_base_packages
