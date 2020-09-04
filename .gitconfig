@@ -1,8 +1,11 @@
 [user]
     name = Grzegorz Czarnocki
     email = g.czarnocki1@gmail.com
+[color]
+    ui = always
 [github]
     user = gczarnocki
 [core]
+    pager = less -r # Enable coloured output
     editor = vim
     excludesfile = ~/.gitignore
