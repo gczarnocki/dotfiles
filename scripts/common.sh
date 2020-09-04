@@ -75,8 +75,6 @@ update_package_cache() {
         elif _exists yum; then
             yum check-update
         fi
-    else 
-        echo "Here3"
     fi
 }
 
@@ -106,5 +104,15 @@ install_package() {
         sudo dnf install -y $@
     elif _exists yum; then
         sudo yum install -y $@
+    fi
+}
+
+install_package_brew() {
+    package_name=${1:?"Package name(s) must be specified!"}
+
+    if ! _exists brew; then
+        warn "Brew is not installed or not added to $PATH!"
+    else
+        brew install $@
     fi
 }
