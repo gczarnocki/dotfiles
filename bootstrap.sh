@@ -16,12 +16,15 @@ export DOTFILES=${1:-"${HOME}/.dotfiles"}
 install_homebrew() {
     echo "Trying to detect installed Homebrew..."
 
-    if _exists brew; then
+    HOMEBREW_EXECUTABLE_PATH=/home/linuxbrew/.linuxbrew/bin/brew
+
+    # TODO: check better for Brew presence
+    if _test f $HOMEBREW_EXECUTABLE_PATH; then
+        eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
         info "Brew is installed."
     else
         info "Installing Homebrew..."
         /bin/bash -c "$(curl -fsSL ${HOMEBREW_INSTALL_URL})"
-
         eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
         brew update
         brew upgrade
