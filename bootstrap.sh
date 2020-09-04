@@ -347,6 +347,26 @@ install_node() {
     finish
 }
 
+install_base_packages() {
+    for pkg in $(cat packages.list); do
+        if ! _exists $pkg; then
+            read -p "Do you want to install $pkg? [y/N] " -n 1 answer
+            echo
+
+            if [ "${answer}" != "y" ]; then
+                continue
+            fi
+
+            _print_package_installing $pkg
+            install_package $pkg
+        else
+            _print_package_already_installed $pkg
+        fi
+    done
+
+    finish
+}
+
 on_start
 
 install_git
@@ -360,6 +380,7 @@ install_docker_compose
 install_golang
 install_nvm
 install_node
+install_base_packages
 
 # bootstrap
 
