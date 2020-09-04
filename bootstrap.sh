@@ -10,6 +10,8 @@ DOCKER_COMPOSE_URL="https://github.com/docker/compose/releases/download/1.26.2/d
 DOCKER_COMPOSE_BASHCOMPLETION_URL="https://raw.githubusercontent.com/docker/compose/1.26.2/contrib/completion/bash/docker-compose"
 ZPLUG_INSTALLER_URL="https://raw.githubusercontent.com/zplug/installer/master/installer.zsh"
 HOMEBREW_INSTALL_URL="https://raw.githubusercontent.com/Homebrew/install/master/install.sh"
+GOLANG_INSTALL_URL="https://golang.org/dl/go1.15.1.linux-amd64.tar.gz"
+NVM_INSTALL_URL="https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh"
 
 export DOTFILES=${1:-"${HOME}/.dotfiles"}
 
@@ -286,6 +288,65 @@ install_docker_compose() {
     finish
 }
 
+install_golang() {
+    local package_name="go"
+
+    # TODO: check if Go is installed
+    _print_package_detect_if_installed "${package_name}"
+
+    if ! _exists go; then
+        _print_package_installing "${package_name}"
+
+        pushd ~
+        wget "${GOLANG_INSTALL_URL}"
+        sudo rm -rf /usr/local/go
+        tar -C /usr/local -xzf go*.linux-amd64.tar.gz
+        popd
+    else
+        _print_package_already_installed "${package_name}"
+    fi
+
+    finish
+}
+
+install_nvm() {
+    local package_name="nvm"
+
+    _print_package_detect_if_installed ${package_name}
+
+    # FIXME
+    if ! _exists ${package_name}; then
+        _print_package_installing ${package_name}
+        # https://github.com/nvm-sh/nvm#installing-and-updating
+        curl -o- ${NVM_INSTALL_URL} | bash
+    else
+        _print_package_already_installed ${package_name}
+    fi
+
+    finish
+}
+
+install_node() {
+    local name="Node, NPM @ LTS version"
+    _print_package_detect_if_installed "${name}"
+        
+    local NVM_DIR="$HOME/.nvm"
+    if _test s "$NVM_DIR/nvm.sh"; then
+        info "Sourcing $NVM_DIR/nvm.sh..."
+        . "$NVM_DIR/nvm.sh"
+
+        if ! _exists node; then
+            nvm install --lts --latest-npm
+        else
+            _print_package_already_installed "${name}"
+        fi
+    else
+        _print_package_already_installed "${name}"
+    fi
+
+    finish
+}
+
 on_start
 
 install_git
@@ -296,7 +357,10 @@ install_zplug
 install_powerline_fonts
 install_docker
 install_docker_compose
+install_golang
+install_nvm
+install_node
 
-bootstrap
+# bootstrap
 
 on_finish

@@ -1,0 +1,23 @@
+ 131  kind create cluster
+  132  kubectl
+  133  kind 
+  134  kind --version
+			 brew install kubernetes-cli
+  136  export KUBECONFIG="$(kind get kubeconfig-path)"
+  137  kubectl cluster-info
+  138  kubectl
+  139  kubectl cluster-info
+  140  echo $KUBECONFIG
+  141  kind get
+  142  kind get kubeconfig
+  143  kind get
+  144  kind get kubeconfig
+  145  kind get kubeconfig --help
+  146  export KUBECONFIG=`kind get kubeconfig`
+  147  kubectl cluster-info
+  148  kubectl config
+  		149  kind get kubeconfig > ~/kubeconfig
+  		150  export KUBECONFIG=~/kubeconfig
+  			151  kubectl cluster-info
+  152  history
+

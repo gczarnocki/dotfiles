@@ -1,0 +1,11 @@
+# Why do I use "${PATH:+:${PATH}}"?
+#   To avoid adding empty entry to $PATH ("<path1>::<path2>")
+#   Empty $PATH entry = current directory added to $PATH
+#   https://unix.stackexchange.com/a/267513
+
+# Golang
+export PATH="/usr/local/go/bin${PATH:+:${PATH}}"
+export PATH="$(go env GOPATH)/bin${PATH:+:${PATH}}"
+
+# nvm
+export NVM_DIR="$HOME/.nvm"
