@@ -82,7 +82,7 @@ install_vscode() {
     if ! _exists ${package_name}; then
         _print_package_installing "${name}"
         import_vscode_repository
-        update_package_cache    
+        update_package_cache
         install_package code
     else
         _print_package_already_installed "${name}"
@@ -171,7 +171,7 @@ delete_previous_docker_installations() {
         sudo dnf remove -y docker-* containerd runc
         sudo dnf config-manager --disable docker-*
     fi
-    
+
     finish
 }
 
@@ -209,7 +209,7 @@ install_docker_package() {
         install_package moby-engine
     fi
 
-    finish       
+    finish
 }
 
 install_docker() {
@@ -224,7 +224,7 @@ install_docker() {
         delete_previous_docker_installations
         install_docker_repository
         install_docker_package
-        
+
         sudo systemctl enable docker
         sudo systemctl start docker
 
@@ -253,8 +253,8 @@ install_docker_compose() {
     finish
 }
 
-install_homebrew
 install_git
+install_homebrew
 install_vscode
 install_zsh
 install_zplug
